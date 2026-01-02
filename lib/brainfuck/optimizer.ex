@@ -41,9 +41,13 @@ defmodule Brainfuck.Optimizer do
   defp simplify_arithemtic([command | rest], optimized),
     do: simplify_arithemtic(rest, [command | optimized])
 
+  defp remove_redundant([{:shift, _n}, {:loop, _body} | rest], :at_start),
+    do: remove_redundant(rest, :at_start)
+
   defp remove_redundant(ast, :at_start),
     do: ast |> Enum.drop_while(&match?({:loop, _body}, &1))
 
+  defp remove_redundant([], :at_end), do: []
   defp remove_redundant([:in], :at_end), do: [:in]
   defp remove_redundant([:out], :at_end), do: [:out]
 
