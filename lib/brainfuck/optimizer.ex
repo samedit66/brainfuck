@@ -8,6 +8,9 @@ defmodule Brainfuck.Optimizer do
 
   defp do_optimize([], optimized), do: Enum.reverse(optimized)
 
+  defp do_optimize([:zero, :in | rest], optimized),
+    do: do_optimize([:in | rest], optimized)
+
   defp do_optimize([:zero, {:inc, _n} = inc | rest], optimized),
     do: do_optimize([inc | rest], optimized)
 
