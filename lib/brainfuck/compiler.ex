@@ -17,9 +17,13 @@ defmodule Brainfuck.Compiler do
   end
 
   def compile(code) do
-    with {:ok, ast} <- Parser.parse(code),
-         ast <- Optimizer.optimize(ast) do
-      {:ok, Backend.C.generate(ast)}
+    with {:ok, ast} <- Parser.parse(code) do
+      code =
+        ast
+        |> Optimizer.optimize()
+        |> Backend.C.generate()
+
+      {:ok, code}
     else
       {:error, reason} -> {:error, reason}
     end
