@@ -10,6 +10,7 @@ defmodule Brainfuck.Optimizer do
     `[+->><.>]++` becomes just `++`.
     Also, it removes loops in the following scenario:
     `>>>[+->>]++` becomes `++`.
+  - Removes sequentional loops: `[>][<]` becomes `[>]`.
   - Drops dead code at the end: `+++++.>>><-` becomes `+++++.`.
     This optimization is quite destructive, because in the following code
     the infinity loop at the end will also be removed: `+++.[-+]` becomes `+++.`.
@@ -64,6 +65,9 @@ defmodule Brainfuck.Optimizer do
 
   defp simplify_arithmetic([{:shift, n}, {:shift, m} | rest], optimized),
     do: simplify_arithmetic([{:shift, n + m} | rest], optimized)
+
+  defp simplify_arithmetic([{:loop, _b1} = first, {:loop, _b2} | rest], optimized),
+    do: simplify_arithmetic([first | rest], optimized)
 
   defp simplify_arithmetic([{:loop, body} | rest], optimized),
     do: simplify_arithmetic(rest, [{:loop, simplify_arithmetic(body, [])} | optimized])
