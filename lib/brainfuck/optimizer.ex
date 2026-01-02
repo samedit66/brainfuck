@@ -68,4 +68,5 @@ defmodule Brainfuck.Optimizer do
   defp io_inside?([:in | _rest]), do: true
   defp io_inside?([:out | _rest]), do: true
   defp io_inside?([{:loop, body} | rest]), do: io_inside?(body) || io_inside?(rest)
+  defp io_inside?([_command | rest]), do: io_inside?(rest)
 end
