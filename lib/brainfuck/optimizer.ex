@@ -1,4 +1,34 @@
 defmodule Brainfuck.Optimizer do
+  @doc """
+  Optimizes given `ast`.
+  The following optimization techniques are used:
+  - Squeezes sequences like `+++.` into just `.`.
+  - Combines sequentional increments and decrements into a single instruction:
+    `+++--` becomes `+`.
+  - Does the same for shifting: `>>>><<` becomes `>>`.
+  - Drops dead loops at the very beggining of the program, when all cells are zero:
+    `[+->><.>]++` becomes just `++`.
+    Also, it removes loops in the following scenario:
+    `>>>[+->>]++` becomes `++`.
+  - Drops dead code at the end: `+++++.>>><-` becomes `+++++.`.
+    This optimization is quite destructive, because in the following code
+    the infinity loop at the end will also be removed: `+++.[-+]` becomes `+++.`.
+    It is not considered to be a bug, it's a feature!
+
+  ## Examples
+
+      iex> Brainfuck.Optimizer.optimize([{:inc, 10}, {:inc, -4}, :out])
+      [{:inc, 6}, :out]
+
+  Note, that if you run `optimize` on the code which has not IO,
+  you'll see nothing:
+
+      iex> Brainfuck.Optimizer.optimize([{:inc, 10}, {:inc, -4}])
+      []
+
+  It's not a bug: no IO happens, no interactions with user, no computations performed.
+
+  """
   def optimize(ast) do
     ast
     |> simplify_arithmetic([])

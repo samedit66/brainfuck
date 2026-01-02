@@ -1,4 +1,4 @@
 defmodule Brainfuck.BoundAnalyser do
-  def count(ast) do
+  def count(_ast) do
   end
 end
