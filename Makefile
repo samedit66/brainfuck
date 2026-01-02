@@ -1,0 +1,2 @@
+build:
+	mix escript.build
