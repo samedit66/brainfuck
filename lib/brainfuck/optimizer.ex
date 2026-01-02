@@ -32,48 +32,53 @@ defmodule Brainfuck.Optimizer do
   """
   def optimize(ast) do
     ast
-    |> simplify_arithmetic([])
+    |> peephole_optimize([])
     |> remove_redundant(:at_start)
     |> remove_redundant(:at_end)
   end
 
-  defp simplify_arithmetic([], optimized), do: Enum.reverse(optimized)
+  defp peephole_optimize([], optimized),
+    do: Enum.reverse(optimized)
 
-  defp simplify_arithmetic([:zero, :in | rest], optimized),
-    do: simplify_arithmetic([:in | rest], optimized)
+  defp peephole_optimize([:zero, :in | rest], optimized),
+    do: peephole_optimize([:in | rest], optimized)
 
-  defp simplify_arithmetic([:zero, {:inc, _n} = inc | rest], optimized),
-    do: simplify_arithmetic([inc | rest], optimized)
+  defp peephole_optimize([:zero, {:inc, _n} = inc | rest], optimized),
+    do: peephole_optimize([inc | rest], optimized)
 
-  defp simplify_arithmetic([:zero, {:loop, _body} | rest], optimized),
-    do: simplify_arithmetic([:zero | rest], optimized)
+  defp peephole_optimize([:zero, {:loop, _body} | rest], optimized),
+    do: peephole_optimize([:zero | rest], optimized)
 
-  defp simplify_arithmetic([{:inc, _n}, :zero | rest], optimized),
-    do: simplify_arithmetic([:zero | rest], optimized)
+  defp peephole_optimize([{:inc, _n}, :zero | rest], optimized),
+    do: peephole_optimize([:zero | rest], optimized)
 
-  defp simplify_arithmetic([{:inc, n}, {:inc, m} | rest], optimized),
-    do: simplify_arithmetic([{:inc, n + m} | rest], optimized)
+  defp peephole_optimize([{:inc, n}, {:inc, m} | rest], optimized),
+    do: peephole_optimize([{:inc, n + m} | rest], optimized)
 
-  defp simplify_arithmetic([{:inc, 0} | rest], optimized),
-    do: simplify_arithmetic(rest, optimized)
+  defp peephole_optimize([{:inc, 0} | rest], optimized),
+    do: peephole_optimize(rest, optimized)
 
-  defp simplify_arithmetic([{:inc, _n}, :in | rest], optimized),
-    do: simplify_arithmetic([:in | rest], optimized)
+  defp peephole_optimize([{:inc, _n}, :in | rest], optimized),
+    do: peephole_optimize([:in | rest], optimized)
 
-  defp simplify_arithmetic([{:shift, 0} | rest], optimized),
-    do: simplify_arithmetic(rest, optimized)
+  defp peephole_optimize([{:shift, 0} | rest], optimized),
+    do: peephole_optimize(rest, optimized)
 
-  defp simplify_arithmetic([{:shift, n}, {:shift, m} | rest], optimized),
-    do: simplify_arithmetic([{:shift, n + m} | rest], optimized)
+  defp peephole_optimize([{:shift, n}, {:shift, m} | rest], optimized),
+    do: peephole_optimize([{:shift, n + m} | rest], optimized)
 
-  defp simplify_arithmetic([{:loop, _b1} = first, {:loop, _b2} | rest], optimized),
-    do: simplify_arithmetic([first | rest], optimized)
+  defp peephole_optimize([{:loop, _b1} = first, {:loop, _b2} | rest], optimized),
+    do: peephole_optimize([first | rest], optimized)
 
-  defp simplify_arithmetic([{:loop, body} | rest], optimized),
-    do: simplify_arithmetic(rest, [{:loop, simplify_arithmetic(body, [])} | optimized])
+  defp peephole_optimize([{:loop, body} | rest], optimized),
+    do:
+      peephole_optimize(
+        rest,
+        [{:loop, peephole_optimize(body, [])} | optimized]
+      )
 
-  defp simplify_arithmetic([command | rest], optimized),
-    do: simplify_arithmetic(rest, [command | optimized])
+  defp peephole_optimize([command | rest], optimized),
+    do: peephole_optimize(rest, [command | optimized])
 
   defp remove_redundant([{:shift, _n}, {:loop, _body} | rest], :at_start),
     do: remove_redundant(rest, :at_start)
