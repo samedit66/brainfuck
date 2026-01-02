@@ -10,12 +10,59 @@ defmodule Brainfuck.Parser do
     "]"
   ]
 
+  @doc ~S"""
+  Parses given brainfuck `code` into intermediate representation.
+  Cleans up `code`, removing any non-brainfuck tokens.
+
+  ## Examples
+
+      iex> Brainfuck.Parser.parse("+")
+      {:ok, [inc: 1]}
+
+      iex> Brainfuck.Parser.parse("-")
+      {:ok, [inc: -1]}
+
+      iex> Brainfuck.Parser.parse(">")
+      {:ok, [shift: 1]}
+
+      iex> Brainfuck.Parser.parse("<")
+      {:ok, [shift: -1]}
+
+      iex> Brainfuck.Parser.parse(".")
+      {:ok, [:out]}
+
+      iex> Brainfuck.Parser.parse(",")
+      {:ok, [:in]}
+
+      iex> Brainfuck.Parser.parse("[]")
+      {:ok, [loop: []]}
+
+      iex> Brainfuck.Parser.parse("[-]")
+      {:ok, [:zero]}
+
+      iex> Brainfuck.Parser.parse("[+]")
+      {:ok, [:zero]}
+
+      iex> Brainfuck.Parser.parse("This will be deleted")
+      {:ok, []}
+
+      iex> Brainfuck.Parser.parse("here we go: +++[->+<]")
+      {:ok, [{:inc, 3}, {:loop, [{:inc, -1}, {:shift, 1}, {:inc, 1}, {:shift, -1}]}]}
+
+  Invalid brainfuck code results in an error:
+
+      iex> Brainfuck.Parser.parse("[")
+      {:error, "At least one loop is not closed properly."}
+
+      iex> Brainfuck.Parser.parse("]")
+      {:error, "Missing loop start."}
+
+  """
   def parse(code) do
     cleaned = code |> String.graphemes() |> clean()
 
-    with {:error, reason} <- do_parse(cleaned, []) do
-      {:error, reason}
-    else
+    case do_parse(cleaned, []) do
+      {:error, reason} -> {:error, reason}
       ast -> {:ok, ast}
     end
   end

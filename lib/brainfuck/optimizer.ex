@@ -1,45 +1,45 @@
 defmodule Brainfuck.Optimizer do
   def optimize(ast) do
     ast
-    |> simplify_arithemtic([])
+    |> simplify_arithmetic([])
     |> remove_redundant(:at_start)
     |> remove_redundant(:at_end)
   end
 
-  defp simplify_arithemtic([], optimized), do: Enum.reverse(optimized)
+  defp simplify_arithmetic([], optimized), do: Enum.reverse(optimized)
 
-  defp simplify_arithemtic([:zero, :in | rest], optimized),
-    do: simplify_arithemtic([:in | rest], optimized)
+  defp simplify_arithmetic([:zero, :in | rest], optimized),
+    do: simplify_arithmetic([:in | rest], optimized)
 
-  defp simplify_arithemtic([:zero, {:inc, _n} = inc | rest], optimized),
-    do: simplify_arithemtic([inc | rest], optimized)
+  defp simplify_arithmetic([:zero, {:inc, _n} = inc | rest], optimized),
+    do: simplify_arithmetic([inc | rest], optimized)
 
-  defp simplify_arithemtic([:zero, {:loop, _body} | rest], optimized),
-    do: simplify_arithemtic([:zero | rest], optimized)
+  defp simplify_arithmetic([:zero, {:loop, _body} | rest], optimized),
+    do: simplify_arithmetic([:zero | rest], optimized)
 
-  defp simplify_arithemtic([{:inc, _n}, :zero | rest], optimized),
-    do: simplify_arithemtic([:zero | rest], optimized)
+  defp simplify_arithmetic([{:inc, _n}, :zero | rest], optimized),
+    do: simplify_arithmetic([:zero | rest], optimized)
 
-  defp simplify_arithemtic([{:inc, n}, {:inc, m} | rest], optimized),
-    do: simplify_arithemtic([{:inc, n + m} | rest], optimized)
+  defp simplify_arithmetic([{:inc, n}, {:inc, m} | rest], optimized),
+    do: simplify_arithmetic([{:inc, n + m} | rest], optimized)
 
-  defp simplify_arithemtic([{:inc, 0} | rest], optimized),
-    do: simplify_arithemtic(rest, optimized)
+  defp simplify_arithmetic([{:inc, 0} | rest], optimized),
+    do: simplify_arithmetic(rest, optimized)
 
-  defp simplify_arithemtic([{:inc, _n}, :in | rest], optimized),
-    do: simplify_arithemtic([:in | rest], optimized)
+  defp simplify_arithmetic([{:inc, _n}, :in | rest], optimized),
+    do: simplify_arithmetic([:in | rest], optimized)
 
-  defp simplify_arithemtic([{:shift, 0} | rest], optimized),
-    do: simplify_arithemtic(rest, optimized)
+  defp simplify_arithmetic([{:shift, 0} | rest], optimized),
+    do: simplify_arithmetic(rest, optimized)
 
-  defp simplify_arithemtic([{:shift, n}, {:shift, m} | rest], optimized),
-    do: simplify_arithemtic([{:shift, n + m} | rest], optimized)
+  defp simplify_arithmetic([{:shift, n}, {:shift, m} | rest], optimized),
+    do: simplify_arithmetic([{:shift, n + m} | rest], optimized)
 
-  defp simplify_arithemtic([{:loop, body} | rest], optimized),
-    do: simplify_arithemtic(rest, [{:loop, simplify_arithemtic(body, [])} | optimized])
+  defp simplify_arithmetic([{:loop, body} | rest], optimized),
+    do: simplify_arithmetic(rest, [{:loop, simplify_arithmetic(body, [])} | optimized])
 
-  defp simplify_arithemtic([command | rest], optimized),
-    do: simplify_arithemtic(rest, [command | optimized])
+  defp simplify_arithmetic([command | rest], optimized),
+    do: simplify_arithmetic(rest, [command | optimized])
 
   defp remove_redundant([{:shift, _n}, {:loop, _body} | rest], :at_start),
     do: remove_redundant(rest, :at_start)
