@@ -38,25 +38,27 @@ defmodule Brainfuck.Optimizer do
   defp do_optimize([command | rest], optimized),
     do: do_optimize(rest, [command | optimized])
 
-  defp remove_redundant(ast, :at_start) do
-    ast
-    |> Enum.split_while(fn
-      {:loop, _body} -> true
-      _ -> false
-    end)
-    |> elem(1)
+  defp remove_redundant(ast, :at_start),
+    do: ast |> Enum.drop_while(&match?({:loop, _body}, &1))
+
+  defp remove_redundant([:in], :at_end), do: [:in]
+  defp remove_redundant([:out], :at_end), do: [:out]
+
+  defp remove_redundant([{:loop, body}] = loop, :at_end) do
+    if io_inside?(body), do: [loop], else: []
   end
 
-  defp remove_redundant(ast, :at_end) do
-    ast
-    |> Enum.reverse()
-    |> Enum.split_while(fn
-      :in -> false
-      :out -> false
-      {:loop, _body} -> false
-      _ -> true
-    end)
-    |> elem(1)
-    |> Enum.reverse()
+  defp remove_redundant([_command], :at_end), do: []
+
+  defp remove_redundant([command | rest], :at_end) do
+    case remove_redundant(rest, :at_end) do
+      [] -> remove_redundant([command], :at_end)
+      commands -> [command | commands]
+    end
   end
+
+  defp io_inside?([]), do: false
+  defp io_inside?([:in | _rest]), do: true
+  defp io_inside?([:out | _rest]), do: true
+  defp io_inside?([{:loop, body} | rest]), do: io_inside?(body) || io_inside?(rest)
 end
